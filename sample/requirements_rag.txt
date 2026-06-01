@@ -1,0 +1,4 @@
+# Local-only RAG (optional): sentence-transformers
+sentence-transformers>=3.0.0
+# Alibaba DashScope: embedding + rerank + Qwen (same DASHSCOPE_API_KEY)
+dashscope>=1.14.0

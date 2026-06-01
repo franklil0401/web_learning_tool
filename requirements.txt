@@ -1,0 +1,22 @@
+# 核心演示功能只使用 Python 标准库。
+#
+# 可选：启用 Bilibili/电脑播放声音监听时安装
+# soundcard>=0.4.3
+# numpy>=1.24.0
+# vosk>=0.3.45
+#
+# 可选：启用麦克风监听时安装
+# sounddevice>=0.4.6
+# vosk>=0.3.45
+#
+# 可选：启用通义千问回答时安装，并设置 TA_USE_LLM=1、TA_LLM_PROVIDER=dashscope、DASHSCOPE_API_KEY
+# dashscope>=1.14.0
+#
+# 可选：启用 OpenAI 音频转写和回答时安装，并设置 OPENAI_API_KEY
+# openai>=2.0.0
+#
+# 可选：启用豆包大模型流式语音识别时安装，并设置 TA_TRANSCRIPTION_PROVIDER=doubao_streaming
+# websockets>=16.0
+#
+# 可选：启用 Web UI 界面时安装
+# flask>=3.0.0

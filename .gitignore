@@ -1,0 +1,15 @@
+__pycache__/
+.workbuddy/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+.env
+data/*.jsonl
+data/*.json
+data/audio_chunks/
+models/*.zip
+models/vosk-model-small-cn-0.22/
+downloads/

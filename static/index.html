@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学生听课实时问答助手</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222636;
+    --border: #2d3148;
+    --text: #e1e4ed;
+    --text2: #8b8fa3;
+    --primary: #6c5ce7;
+    --primary-hover: #7f71f0;
+    --success: #00b894;
+    --danger: #e74c3c;
+    --warning: #fdcb6e;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  /* ── header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .status-bar {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .status-dot.on { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .status-dot.off { background: var(--danger); }
+
+  /* ── main layout ── */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── left panel: controls ── */
+  .panel-left {
+    width: 200px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .panel-left h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--primary); background: #2a2e42; }
+  .btn.active { border-color: var(--success); background: rgba(0,184,148,.1); }
+  .btn.danger:hover { border-color: var(--danger); background: rgba(231,76,60,.1); }
+  .btn .icon { font-size: 16px; width: 20px; text-align: center; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* ── center panel: Q&A ── */
+  .panel-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+  .qa-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .qa-header-btn {
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    transition: all .15s;
+  }
+  .qa-header-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .qa-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+  .qa-item {
+    margin-bottom: 20px;
+  }
+  .qa-question {
+    background: rgba(108,92,231,.1);
+    border: 1px solid rgba(108,92,231,.3);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .qa-question::before { content: "问："; font-weight: 700; color: var(--primary); }
+  .qa-answer {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  .qa-answer::before { content: "答："; font-weight: 700; color: var(--success); }
+  .qa-refs {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .qa-refs summary { cursor: pointer; color: var(--primary); }
+  .qa-refs li { margin-top: 4px; line-height: 1.5; }
+  .qa-loading {
+    text-align: center;
+    color: var(--text2);
+    padding: 12px;
+    font-size: 13px;
+  }
+  .qa-loading .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .qa-input-area {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+  .qa-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .qa-input:focus { border-color: var(--primary); }
+  .qa-send {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .qa-send:hover { background: var(--primary-hover); }
+  .qa-send:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── right panel: live transcript ── */
+  .panel-right {
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .transcript-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .transcript-header .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--danger);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .transcript-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+  .transcript-item {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border-left: 3px solid var(--primary);
+    font-size: 13px;
+    line-height: 1.6;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .transcript-status {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--text2);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    min-height: 36px;
+  }
+  .transcript-status.active { color: var(--warning); }
+
+  /* ── note modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 420px;
+  }
+  .modal h3 { margin-bottom: 12px; font-size: 16px; }
+  .modal textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+  }
+  .modal textarea:focus { border-color: var(--primary); }
+  .modal-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .modal-actions .btn { width: auto; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- ── header ── -->
+<div class="header">
+  <h1>学生听课实时问答助手</h1>
+  <div class="status-bar">
+    <span><span class="status-dot off" id="listenDot"></span><span id="listenLabel">未启动</span></span>
+    <span id="sourceLabel">电脑播放声音</span>
+    <span id="transcriberLabel">豆包流式 ASR</span>
+    <span id="answerLabel">豆包</span>
+  </div>
+</div>
+
+<!-- ── main ── -->
+<div class="main">
+
+  <!-- left: controls -->
+  <div class="panel-left">
+    <h2>听课控制</h2>
+    <button class="btn" id="btnStart" onclick="doStart()">
+      <span class="icon">▶</span> 开始听课
+    </button>
+    <button class="btn danger" id="btnStop" onclick="doStop()" disabled>
+      <span class="icon">⏹</span> 停止听课
+    </button>
+    <div class="divider"></div>
+    <h2>快捷操作</h2>
+    <button class="btn" onclick="openNoteModal()">
+      <span class="icon">📝</span> 手动记一段
+    </button>
+    <button class="btn" onclick="doRecent()">
+      <span class="icon">📋</span> 最近记录
+    </button>
+    <div class="divider"></div>
+    <button class="btn danger" onclick="doClear()">
+      <span class="icon">🗑</span> 清空历史
+    </button>
+    <div class="divider"></div>
+    <h2>音频来源</h2>
+    <button class="btn active" id="btnSystem" onclick="doSource('system')">
+      <span class="icon">🔊</span> 电脑声音
+    </button>
+    <button class="btn" id="btnMic" onclick="doSource('microphone')">
+      <span class="icon">🎤</span> 麦克风
+    </button>
+    <button class="btn" id="btnMixed" onclick="doSource('mixed')">
+      <span class="icon">🎧</span> 混合模式
+    </button>
+    <div style="font-size:11px;color:var(--text2);padding:2px 4px;line-height:1.4">混合模式同时录麦克风+系统声音，适合腾讯会议等场景</div>
+  </div>
+
+  <!-- center: Q&A -->
+  <div class="panel-center">
+    <div class="qa-header"><span>提问与回答</span><button class="qa-header-btn" onclick="doClearQA()">清空对话</button></div>
+    <div class="qa-body" id="qaBody"></div>
+    <div class="qa-input-area">
+      <input class="qa-input" id="qaInput" placeholder="输入你的问题，按回车发送..." 
+             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doAsk();}">
+      <button class="qa-send" id="qaSend" onclick="doAsk()">发送</button>
+    </div>
+  </div>
+
+  <!-- right: live transcript -->
+  <div class="panel-right">
+    <div class="transcript-header">
+      <div class="live-dot" id="liveDot"></div>
+      <span>课堂实时记录</span>
+    </div>
+    <div class="transcript-body" id="transcriptBody"></div>
+    <div class="transcript-status" id="transcriptStatus">等待开始听课...</div>
+  </div>
+
+</div>
+
+<!-- ── note modal ── -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <h3>手动添加课堂记录</h3>
+    <textarea id="noteText" placeholder="输入老师讲的内容..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeNoteModal()">取消</button>
+      <button class="btn" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="doNote()">提交</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── state ──
+let listening = false;
+let asking = false;
+let sse = null;
+
+// ── API helpers ──
+async function api(path, body) {
+  const opts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+// ── controls ──
+async function doStart() {
+  const res = await api('/api/start');
+  if (res.ok) {
+    setListening(true);
+    addStatusMsg(res.message);
+  } else {
+    alert(res.message);
+  }
+}
+
+async function doStop() {
+  const res = await api('/api/stop');
+  setListening(false);
+  addStatusMsg(res.message);
+  if (res.error) addStatusMsg(res.error);
+}
+
+function setListening(v) {
+  listening = v;
+  document.getElementById('btnStart').disabled = v;
+  document.getElementById('btnStop').disabled = !v;
+  document.getElementById('listenDot').className = 'status-dot ' + (v ? 'on' : 'off');
+  document.getElementById('listenLabel').textContent = v ? '运行中' : '未启动';
+  document.getElementById('liveDot').style.display = v ? '' : 'none';
+}
+
+function addStatusMsg(msg) {
+  const el = document.getElementById('transcriptStatus');
+  el.textContent = msg;
+  el.className = 'transcript-status' + (listening ? ' active' : '');
+}
+
+// ── note ──
+function openNoteModal() { document.getElementById('noteModal').classList.add('show'); document.getElementById('noteText').focus(); }
+function closeNoteModal() { document.getElementById('noteModal').classList.remove('show'); }
+async function doNote() {
+  const text = document.getElementById('noteText').value.trim();
+  if (!text) return;
+  const res = await api('/api/note', { text });
+  if (res.ok) {
+    addTranscriptItem(res.text, 'teacher');
+    document.getElementById('noteText').value = '';
+    closeNoteModal();
+  }
+}
+
+// ── recent ──
+async function doRecent() {
+  const r = await fetch('/api/recent?limit=20');
+  const res = await r.json();
+  const body = document.getElementById('transcriptBody');
+  body.innerHTML = '';
+  for (const item of res.records.reverse()) {
+    addTranscriptItem(item.text, item.source, false);
+  }
+  body.scrollTop = body.scrollHeight;
+}
+
+// ── clear ──
+async function doClear() {
+  if (!confirm('确定清空本节课历史吗？')) return;
+  const res = await api('/api/clear');
+  document.getElementById('transcriptBody').innerHTML = '';
+  addStatusMsg(res.message);
+}
+
+// ── clear QA ──
+function doClearQA() {
+  document.getElementById('qaBody').innerHTML = '';
+}
+
+// ── source ──
+async function doSource(src) {
+  const res = await api('/api/source', { source: src });
+  if (res.ok) {
+    const labels = { system: '电脑播放声音', microphone: '麦克风输入', mixed: '混合模式' };
+    document.getElementById('sourceLabel').textContent = labels[src] || src;
+    document.getElementById('btnSystem').className = 'btn' + (src === 'system' ? ' active' : '');
+    document.getElementById('btnMic').className = 'btn' + (src === 'microphone' ? ' active' : '');
+    document.getElementById('btnMixed').className = 'btn' + (src === 'mixed' ? ' active' : '');
+    setListening(false);
+    addStatusMsg(res.message);
+  }
+}
+
+// ── ask ──
+async function doAsk() {
+  if (asking) return;
+  const input = document.getElementById('qaInput');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  asking = true;
+  document.getElementById('qaSend').disabled = true;
+
+  const body = document.getElementById('qaBody');
+  const item = document.createElement('div');
+  item.className = 'qa-item';
+  item.innerHTML = `<div class="qa-question">${escHtml(q)}</div><div class="qa-loading"><span class="spinner"></span>正在检索并生成回答...</div>`;
+  body.appendChild(item);
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    const res = await api('/api/ask', { question: q });
+    let html = `<div class="qa-answer">${escHtml(res.answer)}</div>`;
+    if (res.references && res.references.length) {
+      html += `<details class="qa-refs"><summary>参考片段 (${res.references.length})</summary><ol>`;
+      for (const ref of res.references) {
+        html += `<li>${escHtml(ref.text)}（相关度 ${ref.score}）</li>`;
+      }
+      html += `</ol></details>`;
+    }
+    if (res.warning) html += `<div style="color:var(--warning);font-size:12px;margin-top:6px">${escHtml(res.warning)}</div>`;
+    item.innerHTML = `<div class="qa-question">${escHtml(q)}</div>` + html;
+  } catch (e) {
+    item.innerHTML = `<div class="qa-question">${escHtml(q)}</div><div class="qa-answer" style="color:var(--danger)">请求失败：${escHtml(e.message)}</div>`;
+  }
+  body.scrollTop = body.scrollHeight;
+  asking = false;
+  document.getElementById('qaSend').disabled = false;
+}
+
+// ── transcript panel ──
+function addTranscriptItem(text, source, animate = true) {
+  const body = document.getElementById('transcriptBody');
+  const el = document.createElement('div');
+  el.className = 'transcript-item';
+  if (!animate) el.style.animation = 'none';
+  el.style.borderLeftColor = source === 'teacher' ? 'var(--primary)' : 'var(--success)';
+  el.textContent = text;
+  body.appendChild(el);
+  // keep last 100 items
+  while (body.children.length > 100) body.removeChild(body.firstChild);
+  body.scrollTop = body.scrollHeight;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── SSE ──
+function connectSSE() {
+  if (sse) { sse.close(); sse = null; }
+  sse = new EventSource('/api/stream');
+  sse.onmessage = function(e) {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'record') {
+        addTranscriptItem(data.text, data.source);
+      } else if (data.type === 'status') {
+        addStatusMsg(data.message);
+        // detect listening state from status messages
+        if (data.message.includes('已启动') || data.message.includes('已连接')) {
+          setListening(true);
+        } else if (data.message.includes('已停止') || data.message.includes('失败')) {
+          if (data.message.includes('失败')) setListening(false);
+        }
+      }
+    } catch {}
+  };
+  sse.onerror = function() {
+    // reconnect after 3s
+    setTimeout(connectSSE, 3000);
+  };
+}
+
+// ── init ──
+async function init() {
+  // load status
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    setListening(s.listening);
+    document.getElementById('sourceLabel').textContent = s.audio_source;
+    document.getElementById('transcriberLabel').textContent = s.transcriber;
+    document.getElementById('answerLabel').textContent = s.answer_provider;
+  } catch {}
+  // load existing records
+  await doRecent();
+  // connect SSE
+  connectSSE();
+  document.getElementById('qaInput').focus();
+}
+
+init();
+</script>
+</body>
+</html>

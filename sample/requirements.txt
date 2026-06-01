@@ -1,0 +1,12 @@
+# ÓïÒôÊ¶±ðÒÀÀµ
+sounddevice>=0.4.6
+vosk>=0.3.45
+
+# RAG ÒÀÀµ
+sentence-transformers>=3.0.0
+dashscope>=1.14.0
+faiss-cpu>=1.7.4
+numpy>=1.24.0
+
+# ÆäËûÒÀÀµ
+python-dotenv>=1.0.0

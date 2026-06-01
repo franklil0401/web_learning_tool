@@ -1,0 +1,48 @@
+# 数据文件
+data/
+
+# 语音模型
+vosk-model-cn-0.22/
+vosk-model-small-cn-0.22/
+
+# 缓存文件
+__pycache__/
+*/__pycache__/
+
+# 环境文件
+.env
+
+# 可执行文件
+Trae CN-Setup-x64.exe
+
+# 依赖文件
+*.pyc
+
+# 临时文件
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+
+# IDE 配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+Thumbs.db
+.DS_Store
+
+# 构建文件
+build/
+dist/
+*.egg-info/
+
+# 测试文件
+.pytest_cache/
+
+# 其他临时目录
+.tmp/
+temp/
