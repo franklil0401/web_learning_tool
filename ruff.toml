@@ -1,0 +1,5 @@
+# EvoWeave_deepseek 实验基础设施：lint 只拦截严重问题（未定义名/重定义等），不强制风格
+line-length = 120
+extend-exclude = ["sample"]
+lint.select = ["E4", "E7", "E9", "F821", "F811", "F823"]
+lint.ignore = ["E402"]
